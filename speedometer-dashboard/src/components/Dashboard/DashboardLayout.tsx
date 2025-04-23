@@ -22,26 +22,26 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <div className="w-full h-screen bg-[#111827] flex flex-col">
-      {/* Top section with info */}
-      <div className="text-white p-4">
+      {/* Header with logo and info */}
+      <div className="text-white p-3">
         <div className="text-xl font-bold">Elehike<span className="text-sm align-super">®</span></div>
-        <div className="text-gray-400 text-xs">SMART DISPLAY SYSTEM</div>
-        <div className="mt-2">
+        <div className="text-gray-400 text-xs mb-2">SMART DISPLAY SYSTEM</div>
+        <div>
           <div className="text-gray-300 text-sm">POWER</div>
-          <div className="text-3xl">{power}<span className="text-xl">%</span></div>
+          <div className="text-2xl font-medium">{power}<span className="text-lg">%</span></div>
           <div className="text-gray-400 text-xs">CURRENT</div>
         </div>
       </div>
       
-      {/* Speed info */}
-      <div className="text-center my-4">
-        <div className="text-white text-6xl font-bold">{speed.toFixed(1)}</div>
-        <div className="text-blue-400 text-xl">KM/H</div>
+      {/* Speed display */}
+      <div className="mx-auto my-4">
+        <div className="text-white text-5xl font-bold">{speed.toFixed(1)}</div>
+        <div className="text-blue-400 text-lg text-center">KM/H</div>
       </div>
       
-      {/* Center gauges side by side */}
-      <div className="flex-1 flex justify-center items-center">
-        <div className="flex-1 flex justify-center">
+      {/* Main section with gauges in horizontal row */}
+      <div className="flex-grow flex flex-row justify-evenly items-center w-full px-4 space-x-24">
+        <div className="flex-none">
           <Speedometer
             value={power}
             min={0}
@@ -54,13 +54,13 @@ const DashboardLayout: React.FC = () => {
               numbers: '#888888'
             }}
             size={{ 
-              width: 240, 
-              height: 240 
+              width: 200, 
+              height: 200 
             }}
           />
         </div>
         
-        <div className="flex-1 flex justify-center">
+        <div className="flex-none">
           <Speedometer
             value={battery}
             min={0}
@@ -73,19 +73,19 @@ const DashboardLayout: React.FC = () => {
               numbers: '#888888'
             }}
             size={{ 
-              width: 240, 
-              height: 240 
+              width: 200, 
+              height: 200 
             }}
           />
         </div>
       </div>
       
-      {/* Bottom section */}
-      <div className="p-4 flex flex-col">
-        <div className="text-white text-xl text-center mb-2">{distance.toFixed(1)} km</div>
-        <div className="text-white mt-2">
+      {/* Footer */}
+      <div className="p-3">
+        <div className="text-white text-lg text-center mb-2">{distance.toFixed(1)} km</div>
+        <div className="text-white">
           <div className="text-gray-300 text-sm">BATTERY</div>
-          <div className="text-3xl text-green-500">{battery}<span className="text-xl">%</span></div>
+          <div className="text-2xl font-medium text-green-500">{battery}<span className="text-lg">%</span></div>
           <div className="text-gray-400 text-xs">REMAINING</div>
         </div>
       </div>
