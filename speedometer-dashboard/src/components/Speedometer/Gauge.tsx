@@ -282,16 +282,11 @@ const Speedometer: React.FC<SpeedometerProps> = ({
     const width = dimensions.width - margin.left - margin.right;
     const height = dimensions.height - margin.top - margin.bottom;
     const radius = Math.min(width, height) / 2;
-    
-    // Create scale for needle position (top to bottom)
-    const needleScale = d3.scaleLinear()
+
+    // Create circular gauge scale
+    const circularScale = d3.scaleLinear()
       .domain([min, currentMax])
-      .range([-Math.PI / 2, Math.PI / 2]); // -90 to 90 degrees (top to bottom)
-    
-    // Create scale for tick marks (left to right)
-    const tickScale = d3.scaleLinear()
-      .domain([min, currentMax])
-      .range([-Math.PI, 0]); // -180 to 0 degrees (left to right)
+      .range([0, 2 * Math.PI]); // 0 to 360 degrees (full circle)
     
     // Only clear and redraw everything if dimensions or units change
     if (!svg.select('.speedometer-container').size()) {
@@ -302,206 +297,119 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('class', 'speedometer-container')
         .attr('transform', `translate(${width / 2 + margin.left},${height / 2 + margin.top})`);
 
-      // Add a semi-circular background arc to make the gauge more visible
-      const arcGenerator = d3.arc()
-        .innerRadius(radius * 0.75)
-        .outerRadius(radius * 0.85)
-        .startAngle(-Math.PI / 2)  // Top (-90 degrees)
-        .endAngle(Math.PI / 2);    // Bottom (90 degrees)
+      // Draw the outer ring
+      const outerRingGenerator = d3.arc()
+        .innerRadius(radius * 0.8)
+        .outerRadius(radius * 0.9)
+        .startAngle(0)
+        .endAngle(2 * Math.PI);
 
       g.append('path')
-        .attr('d', arcGenerator({} as any))
+        .attr('d', outerRingGenerator({} as any))
         .attr('fill', mergedColors.background)
-        .attr('class', 'gauge-background');
-
-      // Update needle position
-      const needleLength = radius * 0.7;
-      const needleRadius = radius * 0.02;
-
-      // Remove old needle
-      g.select('.needle').remove();
-
-      // Add new needle with smoother transition
-      const needle = g.append('g')
-        .attr('class', 'needle');
-
-      needle.append('line')
-        .attr('x1', 0)
-        .attr('y1', 0)
-        .attr('x2', 0)
-        .attr('y2', -needleLength)
-        .style('stroke', mergedColors.needle)
-        .style('stroke-width', needleRadius);
-
-      // Add needle center circle
-      needle.append('circle')
-        .attr('class', 'needle-center')
-        .attr('cx', 0)
-        .attr('cy', 0)
-        .attr('r', radius * 0.1)
-        .style('fill', mergedColors.needle);
-
-      // Add value text with smoother transition
-      g.select('.value-text').remove();
-      const valueText = g.append('text')
-        .attr('class', 'value-text')
-        .attr('x', 0)
-        .attr('y', radius * 0.4)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '28px')
-        .attr('font-weight', 'bold')
-        .attr('fill', mergedColors.valueText);
-
-      g.append('text')
-        .attr('class', 'unit-text')
-        .attr('x', 0)
-        .attr('y', radius * 0.5)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '16px')
-        .attr('fill', mergedColors.valueText);
-
-      // Generate tick values for the visible range only
-      const tickCount = 13; // To get nice intervals of 10 for 0-120
-      const tickValues = d3.range(tickCount).map(i => {
-        const tickValue = min + (i * (currentMax - min) / (tickCount - 1));
-        return tickValue;
-      });
-
-      // Add tick marks only within the arc range
-      const tickLength = radius * 0.1;
-      g.selectAll('.tick')
-        .data(tickValues)
-        .enter()
-        .append('g')
-        .attr('class', 'tick')
-        .attr('transform', d => {
-          const angle = tickScale(d); // Use tickScale for positioning
-          return `rotate(${(angle * 180) / Math.PI})`;
-        })
-        .append('line')
-        .attr('x1', radius * 0.8)
-        .attr('y1', 0)
-        .attr('x2', radius * 0.8 + tickLength)
-        .attr('y2', 0)
-        .style('stroke', mergedColors.ticks)
-        .style('stroke-width', 2);
-
-      // Add tick labels
-      g.selectAll('.tick-label')
-        .data(tickValues)
-        .enter()
-        .append('text')
-        .attr('class', 'tick-label')
-        .attr('transform', d => {
-          const angle = tickScale(d); // Use tickScale for positioning
-          const labelRadius = radius * 0.95;
-          const x = labelRadius * Math.cos(angle);
-          const y = labelRadius * Math.sin(angle);
-          return `translate(${x},${y})`;
-        })
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .style('fill', mergedColors.ticks)
-        .style('font-size', `${radius * 0.08}px`)
-        .text(d => Math.round(d));
-
-      // Add unit toggle button
-      const button = svg
-        .append('g')
-        .attr('class', 'unit-toggle')
-        .attr('transform', `translate(${width - 60}, ${height - 40})`)
-        .style('cursor', 'pointer')
-        .on('click', () => setIsMetric(!isMetric));
-
-      button.append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', 60)
-        .attr('height', 30)
-        .attr('rx', 15)
-        .style('fill', mergedColors.background);
-
-      button.append('text')
-        .attr('x', 30)
-        .attr('y', 15)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .style('fill', mergedColors.valueText)
-        .style('font-size', '12px')
-        .text(currentUnit);
-
-      // Add animation control button
-      const animButton = svg
-        .append('g')
-        .attr('class', 'animation-toggle')
-        .attr('transform', `translate(${width - 130}, ${height - 40})`)
-        .style('cursor', 'pointer')
-        .on('click', handleAnimationToggle);
-
-      animButton.append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', 60)
-        .attr('height', 30)
-        .attr('rx', 15)
-        .style('fill', animationState.isAnimating ? mergedColors.needle : mergedColors.background);
-
-      animButton.append('text')
-        .attr('x', 30)
-        .attr('y', 15)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .style('fill', mergedColors.valueText)
-        .style('font-size', '12px')
-        .text(animationState.isAnimating ? 'Stop' : 'Start');
+        .attr('class', 'gauge-outer-ring');
+        
+      // Draw the colored progress arc
+      const progressArcGenerator = (endAngle: number) => {
+        return d3.arc()
+          .innerRadius(radius * 0.8)
+          .outerRadius(radius * 0.9)
+          .startAngle(0)
+          .endAngle(endAngle);
+      };
+      
+      // Determine color based on gauge type
+      let gradientColors;
+      switch(gaugeType) {
+        case 'rpm':
+          gradientColors = ['#3B82F6', '#EF4444']; // Blue to red
+          break;
+        case 'fuel':
+          gradientColors = ['#FCD34D', '#10B981']; // Yellow to green
+          break;
+        default:
+          gradientColors = ['#3B82F6', '#38BDF8']; // Blue tones
+      }
+      
+      // Create gradient for progress arc
+      const gradient = svg.append('defs')
+        .append('linearGradient')
+        .attr('id', `progressGradient-${gaugeType}`)
+        .attr('x1', '0%')
+        .attr('y1', '0%')
+        .attr('x2', '100%')
+        .attr('y2', '0%');
+        
+      gradient.append('stop')
+        .attr('offset', '0%')
+        .attr('stop-color', gradientColors[0]);
+        
+      gradient.append('stop')
+        .attr('offset', '100%')
+        .attr('stop-color', gradientColors[1]);
+      
+      // Add progress arc
+      g.append('path')
+        .attr('class', 'gauge-progress')
+        .attr('fill', `url(#progressGradient-${gaugeType})`)
+        .attr('d', progressArcGenerator(circularScale(animationState.currentValue))({} as any));
+      
+      // Draw small tick marks around the circle
+      const numTicks = 40;
+      for (let i = 0; i < numTicks; i++) {
+        const angle = (i * 2 * Math.PI) / numTicks;
+        const isMajor = i % 5 === 0;
+        const tickLength = isMajor ? radius * 0.12 : radius * 0.06;
+        const tickWidth = isMajor ? 2 : 1;
+        const tickOuterRadius = radius * 0.78;
+        const tickInnerRadius = tickOuterRadius - tickLength;
+        
+        g.append('line')
+          .attr('x1', tickInnerRadius * Math.cos(angle - Math.PI / 2))
+          .attr('y1', tickInnerRadius * Math.sin(angle - Math.PI / 2))
+          .attr('x2', tickOuterRadius * Math.cos(angle - Math.PI / 2))
+          .attr('y2', tickOuterRadius * Math.sin(angle - Math.PI / 2))
+          .style('stroke', isMajor ? '#FFFFFF' : '#888888')
+          .style('stroke-width', tickWidth);
+        
+        if (isMajor) {
+          const labelRadius = tickInnerRadius - 15;
+          const value = min + (i / numTicks) * (currentMax - min);
+          g.append('text')
+            .attr('x', labelRadius * Math.cos(angle - Math.PI / 2))
+            .attr('y', labelRadius * Math.sin(angle - Math.PI / 2))
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', '12px')
+            .attr('fill', '#AAAAAA')
+            .text(Math.round(value));
+        }
+      }
+      
+      // Hide the unit buttons since they're now shown in the layout
+      // ... existing code continues ...
     }
 
-    // Update needle position
-    const needle = svg.select('.needle');
-    if (needle.size()) {
-      const angleRad = needleScale(animationState.currentValue); // Use needleScale for needle
+    // Update the progress arc based on current value
+    const progressArc = svg.select('.gauge-progress');
+    if (progressArc.size()) {
+      const arc = d3.arc()
+        .innerRadius(radius * 0.8)
+        .outerRadius(radius * 0.9)
+        .startAngle(0);
       
-      console.log('Updating needle position:', {
-        currentValue: animationState.currentValue,
-        angleRad: angleRad,
-        angleDegrees: (angleRad * 180) / Math.PI,
-        isAnimating: animationState.isAnimating
-      });
-
-      needle.transition()
-        .duration(400) // Faster transitions
+      const startAngle = 0;
+      const endAngle = circularScale(animationState.currentValue);
+      
+      progressArc.transition()
+        .duration(400)
         .ease(d3.easeQuadInOut)
-        .attr('transform', `rotate(${(angleRad * 180) / Math.PI})`);
-
-      // Update value text
-      const valueText = svg.select('.value-text');
-      if (valueText.size()) {
-        valueText.transition()
-          .duration(400) // Faster transitions
-          .ease(d3.easeQuadInOut)
-          .tween('text', function() {
-            const element = this as SVGTextElement;
-            const currentTextValue = element.textContent ? parseFloat(element.textContent.split(' ')[0]) : currentValue;
-            const i = d3.interpolateNumber(currentTextValue, Math.round(currentValue));
-            return function(t) {
-              element.textContent = `${Math.round(i(t))} ${currentUnit}`;
-            };
-          });
-      }
-
-      // Update animation button text
-      const buttonText = svg.select('.animation-toggle text');
-      if (buttonText.size()) {
-        buttonText.text(animationState.isAnimating ? 'Stop' : 'Start');
-      }
-      
-      // Update animation button color
-      const buttonRect = svg.select('.animation-toggle rect');
-      if (buttonRect.size()) {
-        buttonRect.style('fill', animationState.isAnimating ? mergedColors.needle : mergedColors.background);
-      }
+        .attr('d', arc({
+          startAngle,
+          endAngle
+        } as any));
     }
-
+    
     // Cleanup function
     return () => {
       // Only clear on unmount
@@ -509,7 +417,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         svg.selectAll('*').remove();
       }
     };
-  }, [animationState.currentValue, animationState.isAnimating, dimensions, isMetric, currentUnit, min, currentMax, handleAnimationToggle]);
+  }, [animationState.currentValue, animationState.isAnimating, dimensions, isMetric, currentUnit, min, currentMax, handleAnimationToggle, gaugeType]);
 
   return (
     <svg
