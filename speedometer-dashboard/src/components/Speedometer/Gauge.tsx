@@ -322,7 +322,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
       let gradientColors;
       switch(gaugeType) {
         case 'rpm':
-          gradientColors = ['#3B82F6', '#EF4444']; // Blue to red
+          gradientColors = ['#3B82F6', '#8B5CF6', '#EF4444']; // Blue to purple to red
           break;
         case 'fuel':
           gradientColors = ['#FCD34D', '#10B981']; // Yellow to green
@@ -339,14 +339,28 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('y1', '0%')
         .attr('x2', '100%')
         .attr('y2', '0%');
-        
-      gradient.append('stop')
-        .attr('offset', '0%')
-        .attr('stop-color', gradientColors[0]);
-        
-      gradient.append('stop')
-        .attr('offset', '100%')
-        .attr('stop-color', gradientColors[1]);
+      
+      if (gradientColors.length === 3) {
+        gradient.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', gradientColors[0]);
+          
+        gradient.append('stop')
+          .attr('offset', '50%')
+          .attr('stop-color', gradientColors[1]);
+          
+        gradient.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', gradientColors[2]);
+      } else {
+        gradient.append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', gradientColors[0]);
+          
+        gradient.append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', gradientColors[1]);
+      }
       
       // Add progress arc
       g.append('path')
