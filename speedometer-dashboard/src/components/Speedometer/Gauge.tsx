@@ -10,6 +10,14 @@ interface SpeedometerProps {
     width: number;
     height: number;
   };
+  gaugeType?: 'speed' | 'rpm' | 'fuel';
+  colors?: {
+    background?: string;
+    ticks?: string;
+    numbers?: string;
+    needle?: string;
+    valueText?: string;
+  };
 }
 
 const Speedometer: React.FC<SpeedometerProps> = ({
@@ -17,7 +25,9 @@ const Speedometer: React.FC<SpeedometerProps> = ({
   min = 0,
   max = 120,
   unit = 'km/h',
-  size = { width: 800, height: 450 }  // 16:9 aspect ratio
+  size = { width: 800, height: 450 },  // 16:9 aspect ratio
+  gaugeType = 'speed',
+  colors = {}
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -26,9 +36,43 @@ const Speedometer: React.FC<SpeedometerProps> = ({
   const [animationState, setAnimationState] = useState({
     isAnimating: false,
     isIncreasing: true,
-    currentValue: 30,
+    currentValue: gaugeType === 'speed' ? 30 : gaugeType === 'rpm' ? 1000 : 50,
     hasInterval: false
   });
+
+  // Default colors based on gauge type
+  const defaultColors = {
+    speed: {
+      background: '#334155',
+      ticks: '#FFFFFF',
+      numbers: '#FFFFFF',
+      needle: '#FF3B30',
+      valueText: '#FFFFFF'
+    },
+    rpm: {
+      background: '#334155',
+      ticks: '#FFFFFF',
+      numbers: '#FFFFFF',
+      needle: '#FF9500',
+      valueText: '#FFFFFF'
+    },
+    fuel: {
+      background: '#334155',
+      ticks: '#FFFFFF',
+      numbers: '#FFFFFF',
+      needle: '#34C759',
+      valueText: '#FFFFFF'
+    }
+  };
+
+  // Merge provided colors with defaults
+  const mergedColors = {
+    background: colors.background || defaultColors[gaugeType].background,
+    ticks: colors.ticks || defaultColors[gaugeType].ticks,
+    numbers: colors.numbers || defaultColors[gaugeType].numbers,
+    needle: colors.needle || defaultColors[gaugeType].needle,
+    valueText: colors.valueText || defaultColors[gaugeType].valueText
+  };
 
   // Debug logging for state changes
   useEffect(() => {
@@ -93,17 +137,39 @@ const Speedometer: React.FC<SpeedometerProps> = ({
     if (animationState.isAnimating) {
       console.log('Starting new animation interval');
       
+      // Different animation ranges based on gauge type
+      let minValue, maxValue, step;
+      
+      switch(gaugeType) {
+        case 'rpm':
+          minValue = 1000;
+          maxValue = 6000;
+          step = 50;
+          break;
+        case 'fuel':
+          minValue = 25;
+          maxValue = 75;
+          step = 0.5;
+          break;
+        case 'speed':
+        default:
+          minValue = 30;
+          maxValue = 90;
+          step = 0.5;
+          break;
+      }
+      
       // Ensure we start from a valid value
-      if (animationState.currentValue < 30) {
+      if (animationState.currentValue < minValue) {
         setAnimationState(prev => ({
           ...prev,
-          currentValue: 30,
+          currentValue: minValue,
           isIncreasing: true
         }));
-      } else if (animationState.currentValue > 90) {
+      } else if (animationState.currentValue > maxValue) {
         setAnimationState(prev => ({
           ...prev,
-          currentValue: 90,
+          currentValue: maxValue,
           isIncreasing: false
         }));
       }
@@ -125,7 +191,6 @@ const Speedometer: React.FC<SpeedometerProps> = ({
           if (!prev.isAnimating) return prev;
           
           console.log('Interval tick - Previous state:', prev);
-          const step = 0.5; // Increase step size for faster animation
           let newValue = prev.currentValue;
           let newDirection = prev.isIncreasing;
 
@@ -133,17 +198,17 @@ const Speedometer: React.FC<SpeedometerProps> = ({
           if (prev.isIncreasing) {
             newValue = Number((prev.currentValue + step).toFixed(1));
             console.log('Increasing - New value before limit check:', newValue);
-            if (newValue >= 90) {
+            if (newValue >= maxValue) {
               console.log('Reached upper limit, changing direction');
-              newValue = 90;
+              newValue = maxValue;
               newDirection = false;
             }
           } else {
             newValue = Number((prev.currentValue - step).toFixed(1));
             console.log('Decreasing - New value before limit check:', newValue);
-            if (newValue <= 30) {
+            if (newValue <= minValue) {
               console.log('Reached lower limit, changing direction');
-              newValue = 30;
+              newValue = minValue;
               newDirection = true;
             }
           }
@@ -246,7 +311,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
 
       g.append('path')
         .attr('d', arcGenerator({} as any))
-        .attr('fill', '#334155')
+        .attr('fill', mergedColors.background)
         .attr('class', 'gauge-background');
 
       // Update needle position
@@ -265,27 +330,35 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('y1', 0)
         .attr('x2', 0)
         .attr('y2', -needleLength)
-        .style('stroke', '#ef4444')
+        .style('stroke', mergedColors.needle)
         .style('stroke-width', needleRadius);
 
-      // Add center circle
-      g.append('circle')
+      // Add needle center circle
+      needle.append('circle')
         .attr('class', 'needle-center')
         .attr('cx', 0)
         .attr('cy', 0)
         .attr('r', radius * 0.1)
-        .style('fill', '#ef4444');
+        .style('fill', mergedColors.needle);
 
       // Add value text with smoother transition
       g.select('.value-text').remove();
       const valueText = g.append('text')
         .attr('class', 'value-text')
         .attr('x', 0)
-        .attr('y', radius * 0.3)
+        .attr('y', radius * 0.4)
         .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .style('font-size', `${radius * 0.2}px`)
-        .style('fill', 'white');
+        .attr('font-size', '28px')
+        .attr('font-weight', 'bold')
+        .attr('fill', mergedColors.valueText);
+
+      g.append('text')
+        .attr('class', 'unit-text')
+        .attr('x', 0)
+        .attr('y', radius * 0.5)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '16px')
+        .attr('fill', mergedColors.valueText);
 
       // Generate tick values for the visible range only
       const tickCount = 13; // To get nice intervals of 10 for 0-120
@@ -310,7 +383,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('y1', 0)
         .attr('x2', radius * 0.8 + tickLength)
         .attr('y2', 0)
-        .style('stroke', 'white')
+        .style('stroke', mergedColors.ticks)
         .style('stroke-width', 2);
 
       // Add tick labels
@@ -328,7 +401,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         })
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'middle')
-        .style('fill', 'white')
+        .style('fill', mergedColors.ticks)
         .style('font-size', `${radius * 0.08}px`)
         .text(d => Math.round(d));
 
@@ -346,14 +419,14 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('width', 60)
         .attr('height', 30)
         .attr('rx', 15)
-        .style('fill', '#334155');
+        .style('fill', mergedColors.background);
 
       button.append('text')
         .attr('x', 30)
         .attr('y', 15)
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'middle')
-        .style('fill', 'white')
+        .style('fill', mergedColors.valueText)
         .style('font-size', '12px')
         .text(currentUnit);
 
@@ -371,14 +444,14 @@ const Speedometer: React.FC<SpeedometerProps> = ({
         .attr('width', 60)
         .attr('height', 30)
         .attr('rx', 15)
-        .style('fill', animationState.isAnimating ? '#ef4444' : '#22c55e');
+        .style('fill', animationState.isAnimating ? mergedColors.needle : mergedColors.background);
 
       animButton.append('text')
         .attr('x', 30)
         .attr('y', 15)
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'middle')
-        .style('fill', 'white')
+        .style('fill', mergedColors.valueText)
         .style('font-size', '12px')
         .text(animationState.isAnimating ? 'Stop' : 'Start');
     }
@@ -425,7 +498,7 @@ const Speedometer: React.FC<SpeedometerProps> = ({
       // Update animation button color
       const buttonRect = svg.select('.animation-toggle rect');
       if (buttonRect.size()) {
-        buttonRect.style('fill', animationState.isAnimating ? '#ef4444' : '#22c55e');
+        buttonRect.style('fill', animationState.isAnimating ? mergedColors.needle : mergedColors.background);
       }
     }
 

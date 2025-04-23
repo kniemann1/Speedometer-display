@@ -13,27 +13,61 @@ const DashboardLayout: React.FC = () => {
           paddingBottom: '56.25%', // 16:9 aspect ratio
         }}
       >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div 
-            style={{ 
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '2rem'
-            }}
-          >
-            <Speedometer
-              value={60}
-              min={0}
-              max={120}
-              unit="km/h"
-              size={{ 
-                width: Math.min(window.innerWidth * 0.6, 1200), 
-                height: Math.min(window.innerWidth * 0.6 * 0.5625, 675) 
-              }}
-            />
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+          {/* Main speedometer */}
+          <div className="w-full flex justify-center mb-4">
+            <div style={{ width: '60%', height: '100%' }}>
+              <Speedometer
+                value={60}
+                min={0}
+                max={120}
+                unit="km/h"
+                gaugeType="speed"
+                size={{ 
+                  width: Math.min(window.innerWidth * 0.5, 800), 
+                  height: Math.min(window.innerWidth * 0.5 * 0.5625, 450) 
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* Two additional gauges in a row */}
+          <div className="w-full flex justify-center space-x-8">
+            {/* RPM Gauge */}
+            <div style={{ width: '40%', height: '100%' }}>
+              <Speedometer
+                value={3000}
+                min={0}
+                max={8000}
+                unit="RPM"
+                gaugeType="rpm"
+                colors={{
+                  needle: '#FF9500'
+                }}
+                size={{ 
+                  width: Math.min(window.innerWidth * 0.35, 600), 
+                  height: Math.min(window.innerWidth * 0.35 * 0.5625, 337) 
+                }}
+              />
+            </div>
+            
+            {/* Fuel Gauge */}
+            <div style={{ width: '40%', height: '100%' }}>
+              <Speedometer
+                value={75}
+                min={0}
+                max={100}
+                unit="%"
+                gaugeType="fuel"
+                colors={{
+                  needle: '#34C759'
+                }}
+                size={{ 
+                  width: Math.min(window.innerWidth * 0.35, 600), 
+                  height: Math.min(window.innerWidth * 0.35 * 0.5625, 337) 
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
