@@ -22,8 +22,8 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <div className="w-full h-screen bg-[#111827] flex flex-col">
-      {/* Top banner with logo and info */}
-      <div className="text-white p-3">
+      {/* Top section with info */}
+      <div className="text-white p-4">
         <div className="text-xl font-bold">Elehike<span className="text-sm align-super">®</span></div>
         <div className="text-gray-400 text-xs">SMART DISPLAY SYSTEM</div>
         <div className="mt-2">
@@ -33,62 +33,57 @@ const DashboardLayout: React.FC = () => {
         </div>
       </div>
       
-      {/* Middle section - horizontal gauges */}
-      <div className="flex-1 flex flex-col justify-center">
-        {/* Speed display */}
-        <div className="mb-6 flex flex-col items-center">
-          <div className="text-white text-6xl font-bold">{speed.toFixed(1)}</div>
-          <div className="text-blue-400 text-xl mb-2">KM/H</div>
+      {/* Speed info */}
+      <div className="text-center my-4">
+        <div className="text-white text-6xl font-bold">{speed.toFixed(1)}</div>
+        <div className="text-blue-400 text-xl">KM/H</div>
+      </div>
+      
+      {/* Center gauges side by side */}
+      <div className="flex-1 flex justify-center items-center">
+        <div className="flex-1 flex justify-center">
+          <Speedometer
+            value={power}
+            min={0}
+            max={100}
+            unit="%"
+            gaugeType="rpm"
+            colors={{
+              background: '#121212',
+              ticks: '#555555',
+              numbers: '#888888'
+            }}
+            size={{ 
+              width: 240, 
+              height: 240 
+            }}
+          />
         </div>
         
-        {/* Horizontal gauges */}
-        <div className="flex justify-center space-x-16">
-          {/* Left Power gauge */}
-          <div className="flex justify-center">
-            <Speedometer
-              value={power}
-              min={0}
-              max={100}
-              unit="%"
-              gaugeType="rpm"
-              colors={{
-                background: '#121212',
-                ticks: '#555555',
-                numbers: '#888888'
-              }}
-              size={{ 
-                width: 240, 
-                height: 240 
-              }}
-            />
-          </div>
-          
-          {/* Right Battery gauge */}
-          <div className="flex justify-center">
-            <Speedometer
-              value={battery}
-              min={0}
-              max={100}
-              unit="%"
-              gaugeType="fuel"
-              colors={{
-                background: '#121212',
-                ticks: '#555555',
-                numbers: '#888888'
-              }}
-              size={{ 
-                width: 240, 
-                height: 240 
-              }}
-            />
-          </div>
+        <div className="flex-1 flex justify-center">
+          <Speedometer
+            value={battery}
+            min={0}
+            max={100}
+            unit="%"
+            gaugeType="fuel"
+            colors={{
+              background: '#121212',
+              ticks: '#555555',
+              numbers: '#888888'
+            }}
+            size={{ 
+              width: 240, 
+              height: 240 
+            }}
+          />
         </div>
       </div>
       
       {/* Bottom section */}
-      <div className="p-4">
-        <div className="text-white text-center text-xl mb-3">{distance.toFixed(1)} km</div>
-        <div className="text-white">
+      <div className="p-4 flex flex-col">
+        <div className="text-white text-xl text-center mb-2">{distance.toFixed(1)} km</div>
+        <div className="text-white mt-2">
           <div className="text-gray-300 text-sm">BATTERY</div>
           <div className="text-3xl text-green-500">{battery}<span className="text-xl">%</span></div>
           <div className="text-gray-400 text-xs">REMAINING</div>

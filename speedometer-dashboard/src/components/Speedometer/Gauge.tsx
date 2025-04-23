@@ -402,6 +402,14 @@ const Speedometer: React.FC<SpeedometerProps> = ({
       
       // Hide the unit buttons since they're now shown in the layout
       // ... existing code continues ...
+      g.append('text')
+        .attr('class', 'value-text')
+        .attr('x', 0)
+        .attr('y', radius * 0.4)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '28px')
+        .attr('font-weight', 'bold')
+        .attr('fill', mergedColors.valueText);
     }
 
     // Update the progress arc based on current value
